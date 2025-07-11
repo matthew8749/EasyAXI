@@ -56,7 +56,7 @@ EASYAXI_TOP U_EASYAXI_TOP (
 
 // vcs 
 initial begin
-    $fsdbDumpfile("sim_out.fsdb");
+    $fsdbDumpfile("./sim_out.fsdb");
     $fsdbDumpvars("+all");
 end
 

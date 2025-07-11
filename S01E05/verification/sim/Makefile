@@ -1,4 +1,5 @@
-export ROOT_PATH=/home/matthew/github_project/EasyAXI/S01E05
+#include $(EASYAXI_HOME)/src.mk
+export ROOT_PATH=$(EASYAXI_HOME)/S01E05
 # all: filelist com_fsdb sim verdi
 #---------------------------------------------------------------
 #filelist:

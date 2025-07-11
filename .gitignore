@@ -1,2 +1,8 @@
 *.swp
-/sim
+**/sim/csrc
+**/sim/simv.daidir
+**/sim/verdiLog
+**/novas.conf
+**/novas.*
+**/vcs.log
+**/sim.log
