@@ -25,7 +25,7 @@ module EASYAXI_SLV (
     input  wire  [`AXI_LEN_W   -1:0] axi_slv_arlen,
     input  wire  [`AXI_SIZE_W  -1:0] axi_slv_arsize,
     input  wire  [`AXI_BURST_W -1:0] axi_slv_arburst,
-
+// AXI R  Channel
     output wire                      axi_slv_rvalid,
     input  wire                      axi_slv_rready,
     output wire  [`AXI_DATA_W  -1:0] axi_slv_rdata,
@@ -33,8 +33,8 @@ module EASYAXI_SLV (
     output wire                      axi_slv_rlast
 );
 localparam DLY       = 0.1;
-localparam CLR_CNT_W = 4; 
-localparam REG_ADDR  = 16'h0000;  // Default register address
+localparam CLR_CNT_W = 4;
+localparam REG_ADDR  = 16'h0000;  // Default register address   // slave的地址
 
 //--------------------------------------------------------------------------------
 // Inner Signal
@@ -44,7 +44,7 @@ wire                     rd_buff_clr;         // Buffer clear condition (last re
 wire                     rd_buff_full;        // Buffer full flag
 
 reg                      rd_valid_buff_r;     // Valid buffer register
-reg                      rd_result_buff_r;    // Result buffer register
+reg                      rd_result_buff_r;    // Result buffer register   // Read valid signal
 reg  [`AXI_LEN_W   -1:0] rd_result_index_r;   // Current read index
 
 reg  [`AXI_ID_W    -1:0] rd_id_buff_r;        // AXI ID buffer
@@ -69,8 +69,8 @@ reg  [CLR_CNT_W    -1:0] clr_cnt_r;          // Clear counter for data fetch sim
 //--------------------------------------------------------------------------------
 // Main Ctrl
 //--------------------------------------------------------------------------------
-assign rd_buff_set = rd_req_en;  // Set buffer on read request handshake
-assign rd_buff_clr = rd_result_en & rd_result_last;  // Clear buffer on last read result
+assign rd_buff_set    = rd_req_en;                          // Set buffer on read request handshake
+assign rd_buff_clr    = rd_result_en & rd_result_last;      // Clear buffer on last read result
 
 assign rd_req_en      = axi_slv_arvalid & axi_slv_arready;  // Read request handshake
 assign rd_dec_miss    = (axi_slv_araddr != REG_ADDR);       // Address decode miss
@@ -94,7 +94,7 @@ assign rd_buff_full = &rd_valid_buff_r;  // Buffer full when all bits set
 // Result state control
 always @(posedge clk or negedge rst_n) begin
     if (~rst_n) begin
-        rd_result_buff_r  <= #DLY 1'b0;    
+        rd_result_buff_r  <= #DLY 1'b0;
         rd_result_index_r <= #DLY {`AXI_LEN_W{1'b0}};
     end
     else if (rd_buff_set) begin
@@ -135,38 +135,41 @@ end
 //--------------------------------------------------------------------------------
 always @(posedge clk or negedge rst_n) begin
     if (~rst_n) begin
-        rd_data_buff_r  <= #DLY {`AXI_DATA_W{1'b0}};    
-        rd_resp_buff_r  <= #DLY {`AXI_RESP_W{1'b0}};    
-    end
-    else if (rd_buff_set) begin
+        rd_data_buff_r  <= #DLY {`AXI_DATA_W{1'b0}};
+        rd_resp_buff_r  <= #DLY {`AXI_RESP_W{1'b0}};
+
+    end else if ( rd_buff_set ) begin
         rd_resp_buff_r  <= #DLY rd_dec_miss ? `AXI_RESP_DECERR : `AXI_RESP_OK;  // Set response on decode miss
-    end
-    else if (rd_data_get) begin
+
+    end else if ( rd_data_get ) begin
         rd_data_buff_r  <= #DLY rd_data_buff_r + `AXI_DATA_W'h1;  // Simulate data increment
-        rd_resp_buff_r  <= #DLY rd_data_err ? `AXI_RESP_SLVERR : `AXI_RESP_OK;  // Set response on error
+        rd_resp_buff_r  <= #DLY rd_data_err ? ( `AXI_RESP_SLVERR ) : ( `AXI_RESP_OK ) ;  // Set response on error
+
     end
 end
 
 //--------------------------------------------------------------------------------
 // Simulate the data reading process
 //--------------------------------------------------------------------------------
-assign rd_data_get = (clr_cnt_r == ({CLR_CNT_W{1'b1}} - rd_result_index_r));  // Data fetch when counter max
+assign rd_data_get = (clr_cnt_r == ( {CLR_CNT_W {1'b1} } - rd_result_index_r));  // Data fetch when counter max
 assign rd_data_err = (rd_id_buff_r == `AXI_ID_W'h9) ;  // Simulated data error (when id is 9)
-always @(posedge clk or negedge rst_n) begin
+
+always @ ( posedge clk or negedge rst_n) begin
     if (~rst_n) begin
         clr_cnt_r <= #DLY {CLR_CNT_W{1'b0}};
-    end
-    else if (rd_req_en & ~rd_dec_miss) begin
+
+    end else if ( rd_req_en & ~rd_dec_miss ) begin
         clr_cnt_r <= #DLY `AXI_LEN_W'h1;  // Increment counter on valid request
-    end
-    else if (rd_result_en) begin
-        clr_cnt_r <= #DLY (rd_result_index_r == rd_len_buff_r) ? {CLR_CNT_W{1'b0}} : `AXI_LEN_W'h1;  // Reset or increment counter
-    end
-    else if (rd_data_get) begin
-        clr_cnt_r <= #DLY {CLR_CNT_W{1'b0}};  // Reset counter on data fetch
-    end
-    else if (clr_cnt_r != {CLR_CNT_W{1'b0}}) begin
-        clr_cnt_r <= #DLY clr_cnt_r + 1;  // Auto-increment if non-zero
+
+    end else if ( rd_result_en ) begin
+        clr_cnt_r <= #DLY ( rd_result_index_r == rd_len_buff_r ) ? { CLR_CNT_W {1'b0} } : `AXI_LEN_W'h1;  // Reset or increment counter
+
+    end else if (rd_data_get) begin
+        clr_cnt_r <= #DLY { CLR_CNT_W {1'b0} };                              // Reset counter on data fetch
+
+    end else if (clr_cnt_r != { CLR_CNT_W {1'b0 } } ) begin
+        clr_cnt_r <= #DLY clr_cnt_r + 1;                                  // Auto-increment if non-zero
+
     end
 end
 
@@ -175,10 +178,10 @@ end
 //--------------------------------------------------------------------------------
 assign axi_slv_arready = (~rd_buff_full);  // Ready when buffer not full
 
-assign axi_slv_rvalid  = rd_result_buff_r;  // Read valid signal
+assign axi_slv_rvalid  = rd_result_buff_r;  // Read valid sign// Read valid signal
 
 assign axi_slv_rdata   = rd_data_buff_r;    // Read data output
 assign axi_slv_rresp   = rd_resp_buff_r;    // Read response output
-assign axi_slv_rlast   = (rd_len_buff_r == rd_result_index_r);  // Last read flag
+assign axi_slv_rlast   = (rd_len_buff_r == rd_result_index_r);  // Last read flag  //比較"需要發送個數"和"已經發送個數"
 
 endmodule

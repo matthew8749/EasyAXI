@@ -24,7 +24,7 @@ module EASYAXI_MST (
     output wire  [`AXI_LEN_W   -1:0] axi_mst_arlen,
     output wire  [`AXI_SIZE_W  -1:0] axi_mst_arsize,
     output wire  [`AXI_BURST_W -1:0] axi_mst_arburst,
-
+// AXI R  Channel
     input  wire                      axi_mst_rvalid,
     output wire                      axi_mst_rready,
     input  wire  [`AXI_DATA_W  -1:0] axi_mst_rdata,
@@ -40,7 +40,7 @@ wire                     rd_buff_set;         // Buffer set condition (enable & 
 wire                     rd_buff_clr;         // Buffer clear condition (valid & no pending request/complete)
 wire                     rd_buff_full;        // Buffer full flag
 
-reg                      rd_valid_buff_r;     // Valid buffer register
+reg                      rd_valid_buff_r;     // Valid buffer register    //本質含意是指這個buffer有效
 reg                      rd_req_buff_r;       // Request buffer register
 reg                      rd_comp_buff_r;      // Completion buffer register
 
