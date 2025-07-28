@@ -21,7 +21,7 @@ run:
 	-debug_acc+all -debug_region+cell+encrypt \
 	|tee vcs.log 
 #---------------------------------------------------------------
-sim:
+sim: compile run
 	./simv |tee sim.log
 #---------------------------------------------------------------
 #dve:
