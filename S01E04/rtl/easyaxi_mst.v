@@ -32,36 +32,36 @@ module EASYAXI_MST (
     input  wire                      axi_mst_rlast
 );
 
-localparam DLY = 0.1;
+localparam DLY           = 0.1;
 localparam MAX_BURST_LEN = 8;  // Maximum burst length support
 localparam BURST_CNT_W   = $clog2(MAX_BURST_LEN);  // Maximum burst length cnt width
 
 //--------------------------------------------------------------------------------
 // Inner Signal
 //--------------------------------------------------------------------------------
-wire                     rd_buff_set;
-wire                     rd_buff_clr;
-wire                     rd_buff_full;
+wire                     rd_buff_set;      // Buffer set condition (enable & not full)
+wire                     rd_buff_clr;      // Buffer clear condition (valid & no pending request/complete)
+wire                     rd_buff_full;     // Buffer full flag
 
-reg                      rd_valid_buff_r;
-reg                      rd_req_buff_r;
-reg                      rd_comp_buff_r;
+reg                      rd_valid_buff_r;  // Valid buffer register      // 本質含意是指這個buffer有效
+reg                      rd_req_buff_r;    // Request buffer register
+reg                      rd_comp_buff_r;   // Completion buffer register
 
-reg  [`AXI_ID_W-1:0]     rd_id_buff_r;
-reg  [`AXI_ADDR_W-1:0]   rd_addr_buff_r;
-reg  [`AXI_LEN_W-1:0]    rd_len_buff_r;
-reg  [`AXI_SIZE_W-1:0]   rd_size_buff_r;
-reg  [`AXI_BURST_W-1:0]  rd_burst_buff_r;
+reg  [`AXI_ID_W-1:0]     rd_id_buff_r;     // AXI ID buffer
+reg  [`AXI_ADDR_W-1:0]   rd_addr_buff_r;   // AXI Address buffer
+reg  [`AXI_LEN_W-1:0]    rd_len_buff_r;    // AXI Length buffer
+reg  [`AXI_SIZE_W-1:0]   rd_size_buff_r;   // AXI Size buffer
+reg  [`AXI_BURST_W-1:0]  rd_burst_buff_r;  // AXI Burst type buffer
     
 // Data buffer now supports up to 8 beats
-reg  [`AXI_DATA_W-1:0]   rd_data_buff_r [MAX_BURST_LEN-1:0];
-reg  [BURST_CNT_W-1:0]   rd_data_cnt_r;  // Counter for burst data
-reg  [`AXI_RESP_W-1:0]   rd_resp_buff_r;
+reg  [`AXI_DATA_W-1:0]   rd_data_buff_r [MAX_BURST_LEN-1:0]; // Read data buffer
+reg  [BURST_CNT_W-1:0]   rd_data_cnt_r;                      // Counter for burst data
+reg  [`AXI_RESP_W-1:0]   rd_resp_buff_r;                     // Read response buffer
 wire                     rd_resp_err;
 
-wire                     rd_req_en;
-wire                     rd_result_en;
-wire                     rd_result_last;
+wire                     rd_req_en;                          // Read request handshake (valid & ready)
+wire                     rd_result_en;                       // Read result handshake (valid & ready)
+wire                     rd_result_last;                     // Last read result flag
 
 //--------------------------------------------------------------------------------
 // Main Ctrl
